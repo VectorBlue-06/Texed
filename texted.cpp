@@ -2,8 +2,10 @@
 #include<fstream>   //ofstream
 #include<vector>    //all temp lines stored
 #include<windows.h>
-#include<conio.h>
-#include<filesystem> //for 
+#include<conio.h>   
+#include<filesystem> //for filesystem::exists
+#include<iomanip>    //for setw()-> for alignment of bullets 
+
 
 std::string editLine(const std::string& initial = "") {
     std::string text = initial;
@@ -85,7 +87,7 @@ int main(){
     
     //teh output starts from here
     system("CLS");
-    std::cout<<"\n------------START----------------"<<std::endl;
+    std::cout<<"\n   ------------START----------------"<<std::endl;
     
 
 
@@ -94,7 +96,8 @@ int main(){
     
         while(std::getline(in_myfile,temp_load)){
             lines.push_back(temp_load);
-            std::cout<<line_count_load<<"> "<<temp_load<<std::endl;
+            std::cout<<std::setw(3)<<line_count_load<<"> "; //bullets for in_myfile
+            std::cout<<temp_load<<std::endl;
             line_count_load++;
         }
         line_count = line_count_load;
@@ -104,7 +107,7 @@ int main(){
     while (should_run)
     {   
         if(command_mode == false){
-            std::cout<<line_count++<<"> ";
+            std::cout << std::setw(3)<< line_count++ << "> ";
 
             std::getline(std::cin, temp);
 
