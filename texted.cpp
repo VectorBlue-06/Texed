@@ -4,7 +4,7 @@
 #include <windows.h>
 #include <conio.h>
 #include <filesystem> //for filesystem::exists
-#include <iomanip>    //for setw()-> for alignment of bullets
+#include <iomanip>    //for setw()
 
 std::string editLine(const std::string &initial = "")
 {
@@ -62,10 +62,34 @@ std::string editLine(const std::string &initial = "")
     return text;
 }
 
+int launch_screen(std::string &path)
+{
+
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << "                     __ __| ____|\\ \\  /__ __| ____| ___ \\           " << std::endl;
+    std::cout << "                        |   __|   \\  /    |   __|   |   |           " << std::endl;
+    std::cout << "                        |   |        \\    |   |     |   |           " << std::endl;
+    std::cout << "                       _|  _____| _/\\_\\  _|  _____ |____/            " << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
+
+    std::cout << std::setw(10) << "path:";
+    std::cin >> path;
+    std::cin.ignore();
+}
+
 // TODO-done- files not saving cause os using stream i and o at same time
 // TODO-fixed- aligned bullets
 // FIX e without number crashes the program
 // FIX-fixed- edit mode still showing editing line after pressing enter
+// TODO smooth cursor movement
+// TODO improve ui
+// FIX remove " : " form the output file
+// TODO remove cmd line after exits
+// TODO add main menu
+// TODO add navigation tools
 
 int main()
 {
@@ -78,9 +102,8 @@ int main()
     bool does_file_exists = false;
 
     std::string path;
-    std::cout << "path:";
-    std::cin >> path;
-    std::cin.ignore();
+
+    launch_screen(path);
 
     system("cls");
 
@@ -175,7 +198,8 @@ int main()
     out_myfile.close();
 
     std::cout << "\n------------ENDS----------------" << std::endl;
-    int i;
+
+    int i; // will fix
     std::cin >> i;
 
     return 0;
