@@ -1,206 +1,235 @@
 #include <iostream>
-#include <fstream> //ofstream
-#include <vector>  //all temp lines stored
+#include <fstream>
+#include <vector>
+#include <string>
 #include <windows.h>
 #include <conio.h>
-#include <filesystem> //for filesystem::exists
-#include <iomanip>    //for setw()
+#include <filesystem>
+#include <sstream>
+#include <iomanip>
 
-std::string editLine(const std::string &initial = "")
+using namespace std;
+
+HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
+// ---------- Console ----------
+
+void enableConsoleColors()
 {
-    std::string text = initial;
-    int cursor = text.size();
+    DWORD mode;
+    GetConsoleMode(hConsole, &mode);
+    mode |= ENABLE_PROCESSED_OUTPUT;
+    SetConsoleMode(hConsole, mode);
+}
 
-    std::cout << "\r" << text;
+void clearScreen()
+{
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    DWORD written;
+    GetConsoleScreenBufferInfo(hConsole, &csbi);
+    DWORD cells = csbi.dwSize.X * csbi.dwSize.Y;
+    FillConsoleOutputCharacter(hConsole, ' ', cells, {0, 0}, &written);
+    SetConsoleCursorPosition(hConsole, {0, 0});
+}
+
+void setColor(WORD c)
+{
+    SetConsoleTextAttribute(hConsole, c);
+}
+
+void resetColor()
+{
+    setColor(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+}
+
+// ---------- Intro ----------
+
+void intro(string &path, bool &readOnly)
+{
+    clearScreen();
+
+    setColor(FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+
+    system("cls");
+    std::cout << "\n\n\n";
+    std::cout << "                     __ __| ____|\\ \\  /__ __| ____| ___ \\         \n";
+    std::cout << "                        |   __|   \\  /    |   __|   |   |           \n";
+    std::cout << "                        |   |        \\    |   |     |   |           \n";
+    std::cout << "                       _|  _____| _/\\_\\  _|  _____ |____/          \n\n\n";
+
+    std::cout << "\n                       MINIMAL EDITOR v0.2\n";
+    std::cout << "                Fast - Keyboard Driven - Minimal\n\n";
+    resetColor();
+
+    cout << "----------------------------------------\n";
+    cout << "[1] Open existing file\n";
+    cout << "[2] New file\n";
+    cout << "[3] Read-only mode\n";
+    cout << "----------------------------------------\n\n";
+
+    cout << "Commands:\n";
+    cout << "  :        command mode\n";
+    cout << "  e <n>    edit line n\n";
+    cout << "  w        save\n";
+    cout << "  wq       save & quit\n";
+    cout << "  q        quit\n\n";
+
+    cout << "Choice: ";
+    int choice;
+    cin >> choice;
+    cin.ignore();
+
+    cout << "Path: ";
+    getline(cin, path);
+
+    if (choice == 3)
+        readOnly = true;
+}
+
+// ---------- Editor ----------
+
+string editLine(const string &initial)
+{
+    string text = initial;
+    int cursor = text.size();
 
     while (true)
     {
+        clearScreen();
+        cout << text << "\n";
+        cout << string(cursor, ' ') << "^\n";
+
         int key = _getch();
 
-        // ENTER key → finish editing
         if (key == 13)
-            break;
+            break; // ENTER
+        if (key == 27)
+            return initial; // ESC cancel
 
-        // ESC key → cancel
-        else if (key == 27)
-            return "";
-
-        // BACKSPACE
-        else if (key == 8)
+        if (key == 8 && cursor > 0)
         {
-            if (cursor > 0)
-            {
-                text.erase(cursor - 1, 1);
-                cursor--;
-            }
+            text.erase(cursor - 1, 1);
+            cursor--;
         }
-
-        // Arrow keys
         else if (key == 0 || key == 224)
         {
-            key = _getch(); // get second code
+            key = _getch();
             if (key == 75 && cursor > 0)
-                cursor--; // Left
-            else if (key == 77 && cursor < (int)text.size())
-                cursor++; // Right
+                cursor--;
+            else if (key == 77 && cursor < text.size())
+                cursor++;
+            else if (key == 71)
+                cursor = 0;
+            else if (key == 79)
+                cursor = text.size();
         }
-
-        // Printable characters
         else if (key >= 32 && key <= 126)
         {
             text.insert(cursor, 1, (char)key);
             cursor++;
         }
-
-        // redraw
-        std::cout << "\r" << std::string(80, ' ') << "\r"; // clear line
-        std::cout << text;
-        std::cout << "\r" << text.substr(0, cursor); // move cursor
     }
-
-    std::cout << "\n";
     return text;
 }
 
-int launch_screen(std::string &path)
+// ---------- Main ----------
+
+enum Mode
 {
-
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << "                     __ __| ____|\\ \\  /__ __| ____| ___ \\           " << std::endl;
-    std::cout << "                        |   __|   \\  /    |   __|   |   |           " << std::endl;
-    std::cout << "                        |   |        \\    |   |     |   |           " << std::endl;
-    std::cout << "                       _|  _____| _/\\_\\  _|  _____ |____/            " << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-
-    std::cout << std::setw(10) << "path:";
-    std::cin >> path;
-    std::cin.ignore();
-}
-
-// TODO-done- files not saving cause os using stream i and o at same time
-// TODO-fixed- aligned bullets
-// FIX e without number crashes the program
-// FIX-fixed- edit mode still showing editing line after pressing enter
-// TODO smooth cursor movement
-// TODO improve ui
-// FIX remove " : " form the output file
-// TODO remove cmd line after exits
-// TODO add main menu
-// TODO add navigation tools
+    INSERT,
+    COMMAND,
+    EDIT
+};
 
 int main()
 {
+    ios::sync_with_stdio(false);
+    enableConsoleColors();
 
-    system("cls");
+    string path;
+    bool readOnly = false;
 
-    bool should_run = true;
-    bool command_mode = false;
-    bool edit_mode = false;
-    bool does_file_exists = false;
+    intro(path, readOnly);
 
-    std::string path;
+    vector<string> lines;
+    Mode mode = INSERT;
+    bool running = true;
+    int editIndex = -1;
 
-    launch_screen(path);
-
-    system("cls");
-
-    std::vector<std::string> lines;
-    int line_count = 1;
-    int line_count_load = 1; // number of lines from loaded file
-    int line_editing;
-
-    std::ifstream in_myfile(path);
-    std::string temp;
-
-    // the output starts from here
-    system("CLS");
-    std::cout << "\n   ------------START----------------" << std::endl;
-
-    if (std::filesystem::exists(path))
+    if (filesystem::exists(path))
     {
-        std::string temp_load;
-
-        while (std::getline(in_myfile, temp_load))
-        {
-            lines.push_back(temp_load);
-            std::cout << std::setw(3) << line_count_load << "> "; // bullets for in_myfile
-            std::cout << temp_load << std::endl;
-            line_count_load++;
-        }
-        line_count = line_count_load;
+        ifstream in(path);
+        string l;
+        while (getline(in, l))
+            lines.push_back(l);
     }
 
-    while (should_run)
+    clearScreen();
+
+    while (running)
     {
-        if (command_mode == false)
+        if (mode == INSERT)
         {
-            std::cout << std::setw(3) << line_count++ << "> ";
+            cout << setw(3) << lines.size() + 1 << "> ";
+            string input;
+            getline(cin, input);
 
-            std::getline(std::cin, temp);
-
-            lines.push_back(temp);
-
-            if (temp == ":")
-                command_mode = true;
+            if (input == ":")
+                mode = COMMAND;
+            else if (!readOnly)
+                lines.push_back(input);
+            else
+                cout << "(read-only)\n";
         }
-
-        if (command_mode == true)
+        else if (mode == COMMAND)
         {
-            std::cout << "\r~";
-            std::string cmd;
-            std::cin >> cmd;
+            cout << "~ ";
+            string cmd;
+            getline(cin, cmd);
 
-            if (cmd == "q")
+            istringstream iss(cmd);
+            string c;
+            iss >> c;
+
+            if (c == "q")
+                running = false;
+
+            else if ((c == "w" || c == "wq") && !readOnly)
             {
-                should_run = false;
-                break;
+                ofstream out(path + ".tmp");
+                for (auto &l : lines)
+                    out << l << "\n";
+                out.close();
+                filesystem::rename(path + ".tmp", path);
+
+                if (c == "wq")
+                    running = false;
             }
-            if (cmd == "n")
-                command_mode = false;
-            if (cmd.find("e") != std::string::npos)
+            else if (c == "e" && !readOnly)
             {
-                edit_mode = true;
-
-                size_t pos = cmd.find('e');
-                try
+                int n;
+                iss >> n;
+                if (n > 0 && n <= lines.size())
                 {
-                    std::string num_str = cmd.substr(pos + 1);
-                    int num = std::stoi(num_str);
-                    std::cout << "line no : " << num << "\n";
-                    line_editing = num - 1;
-                    throw 1;
+                    editIndex = n - 1;
+                    mode = EDIT;
+                    continue;
                 }
-                catch (...)
-                {
-                }
-                command_mode = false;
             }
-            std::cin.ignore();
-        }
+            else
+                cout << "Invalid / read-only command\n";
 
-        if (edit_mode == true)
+            mode = INSERT;
+        }
+        else if (mode == EDIT)
         {
-            // std::cout<<line_editing<<"< "<<lines[line_editing];
-            lines[line_editing] = editLine(lines[line_editing]);
-            edit_mode = false;
+            lines[editIndex] = editLine(lines[editIndex]);
+            mode = INSERT;
         }
     }
 
-    in_myfile.close();
-    std::ofstream out_myfile(path);
-    for (auto &ln : lines)
-    {
-        out_myfile << ln << "\n";
-    }
-    out_myfile.close();
-
-    std::cout << "\n------------ENDS----------------" << std::endl;
-
-    int i; // will fix
-    std::cin >> i;
-
+    resetColor();
+    clearScreen();
+    cout << "---- END ----\n";
     return 0;
 }
