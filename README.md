@@ -1,4 +1,4 @@
-# TexEd
+# TextEd
 A minimal terminal-based text editor written in C++ for Windows.
 
 ##  Features
@@ -15,7 +15,7 @@ Single file to compile.
 g++ main.cpp -o texted
 ```
 
-## TEXED - Minimal Text Editor — v0.2
+## TEXTED - Minimal Text Editor — v0.2
 
 A lightweight, keyboard-driven console text editor for Windows.
 
@@ -26,9 +26,12 @@ A lightweight, keyboard-driven console text editor for Windows.
   - Read-only mode
 - Command mode (`:`) with:
   - `e <n>` edit line
-  - `w` save
-  - `wq` save & quit
+  - `s` save
+  - `sq` save & quit
   - `q` quit
+  - `d <n>` to delete a single line
+  - `d <n>,<m>` to delete given lines
+  - `d <n> to <m>` to delete multiple lines from n to m including m and n
 - Improved line editor:
   - Arrow keys + Home/End
   - ESC cancels edit safely
