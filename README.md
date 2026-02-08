@@ -15,6 +15,11 @@ Single file to compile.
 g++ main.cpp -o texted
 ```
 
+## Release
+
+https://github.com/VectorBlue-06/Texed/releases
+
+
 ## TEXTED - Minimal Text Editor — v0.2
 
 A lightweight, keyboard-driven console text editor for Windows.
