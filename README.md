@@ -10,6 +10,7 @@ A minimal terminal-based text editor written in C++ for Windows.
 ##  Build
 ```bash
 g++ main.cpp -o texted
+```
 
 ## TEXED - Minimal Text Editor — v0.2
 
