@@ -1,13 +1,16 @@
-# Texed 
-A minimal terminal-based text editor written in C++ for Windows.  
+# TexEd
+A minimal terminal-based text editor written in C++ for Windows.
 
 ##  Features
-- Open, edit, and save text files  
-- Simple keyboard-driven controls  
-- Lightweight and distraction-free  
-- Built using standard C++ 
+- Open, edit, and save text files
+- Simple keyboard-driven controls
+- Lightweight and fast
+- Built using standard C++
 
 ##  Build
+
+Single file to compile.
+
 ```bash
 g++ main.cpp -o texted
 ```
@@ -30,21 +33,21 @@ A lightweight, keyboard-driven console text editor for Windows.
   - Arrow keys + Home/End
   - ESC cancels edit safely
 - Read-only mode enforcement (no edit/save)
-- Centered intro screen with formatted commands
-- Colored console UI (WinAPI)
+- Colored console UI (Not working properly)
 
 ### Fixes & Improvements
-- Removed `system("cls")`, replaced with WinAPI screen clearing
 - Safe file saving using temporary file swap
 - Fixed cursor redraw and ESC deletion bug
 - Cleaner command parsing and state handling
+- And other bugs fixed
 
 ### Platform
 - Windows only (WinAPI based)
+- Cross-platform support coming soon...
 
 ### Planned
 - Undo/redo
 - Search
 - Status bar
 - Cross-platform support
-
+- Color
