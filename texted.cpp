@@ -1,4 +1,4 @@
-#include <iostream>
+#include <iostream> 
 #include <fstream>
 #include <vector>
 #include <string>
@@ -31,7 +31,6 @@ void intro_text()
 {
     clearScreen();
 
-    system("cls");
     std::cout << "\n\n";
     std::cout << "                  __ __| ____|\\ \\  /__ __| ____| ___ \\         \n";
     std::cout << "                     |   __|   \\  /    |   __|   |   |           \n";
@@ -68,9 +67,22 @@ void intro_logic(string &path, bool &readOnly)
         intro_text();
 
         cout << "Choice: ";
-        int choice;
-        cin >> choice;
-        cin.ignore();
+        string choiceLine;
+        getline(cin, choiceLine);
+
+        if (choiceLine.empty())
+            continue;
+
+        int choice = 0;
+        try
+        {
+            choice = stoi(choiceLine);
+        }
+        catch (...)
+        {
+            cout << "\nInvalid choice!\n\n";
+            continue;
+        }
 
         if (choice == 1)
         {
@@ -177,14 +189,38 @@ string editLine(const string &initial)
     return text;
 }
 
-// ---------- Main ----------
-
 enum Mode
 {
     INSERT,
     COMMAND,
     EDIT
 };
+
+void renderScreen(const string &path, const vector<string> &lines, Mode mode, bool readOnly)
+{
+    clearScreen();
+
+    cout << path;
+    if (readOnly)
+        cout << " [READ-ONLY]";
+    cout << "\n";
+    cout << "-------------------\n";
+
+    cout << "Mode: ";
+    if (mode == INSERT)
+        cout << "INSERT  (type ':' then Enter for commands)\n";
+    else if (mode == COMMAND)
+        cout << "COMMAND (q=quit, s=save, sq=save+quit, eN=edit, dN=delete)\n";
+    else
+        cout << "EDIT LINE\n";
+
+    cout << "\n";
+
+    for (int i = 0; i < static_cast<int>(lines.size()); ++i)
+        cout << setw(3) << i + 1 << "> " << lines[i] << "\n";
+}
+
+// ---------- Main ----------
 
 int main()
 {
@@ -208,15 +244,7 @@ int main()
             lines.push_back(l);
     }
 
-    clearScreen();
-
-    // Display file name at the first line
-    cout << path << "\n";
-    cout << "-------------------\n";
-
-    // Display existing lines
-    for (int i = 0; i < lines.size(); i++)
-        cout << setw(3) << i + 1 << "> " << lines[i] << "\n";
+    renderScreen(path, lines, mode, readOnly);
 
     while (running)
     {
@@ -229,7 +257,10 @@ int main()
             if (input == ":")
                 mode = COMMAND;
             else if (!readOnly)
+            {
                 lines.push_back(input);
+                renderScreen(path, lines, mode, readOnly);
+            }
             else
                 cout << "(read-only)\n";
         }
@@ -257,16 +288,36 @@ int main()
                 if (c == "sq")
                     running = false;
             }
-            else if ((c == "e" || c[0] == 'e') && !readOnly)
+            else if (!c.empty() && (c == "e" || c[0] == 'e') && !readOnly)
             {
                 // Handle e3 or e 3 format
                 int n = 0;
-                if (c.size() > 1)
-                    n = stoi(c.substr(1)); // e3 format
-                else
-                    iss >> n; // e 3 format
+                try
+                {
+                    if (c.size() > 1)
+                    {
+                        // e3 format (no space)
+                        n = stoi(c.substr(1));
+                    }
+                    else
+                    {
+                        // e 3 format (with space)
+                        if (!(iss >> n))
+                        {
+                            cout << "Invalid line number\n";
+                            mode = INSERT;
+                            continue;
+                        }
+                    }
+                }
+                catch (...)
+                {
+                    cout << "Invalid line number\n";
+                    mode = INSERT;
+                    continue;
+                }
 
-                if (n > 0 && n <= lines.size())
+                if (n > 0 && n <= static_cast<int>(lines.size()))
                 {
                     editIndex = n - 1;
                     mode = EDIT;
@@ -275,7 +326,7 @@ int main()
                 else
                     cout << "Invalid line number\n";
             }
-            else if ((c == "d" || c[0] == 'd') && !readOnly)
+            else if (!c.empty() && (c == "d" || c[0] == 'd') && !readOnly)
             {
                 // Handle delete command: d3, d 3, d1,3,5, d1 to 5 (spaces optional)
                 vector<int> linesToDelete;
@@ -287,7 +338,11 @@ int main()
                     delCmd = delCmd.substr(pos + 1);
 
                 // Trim leading spaces
-                delCmd.erase(0, delCmd.find_first_not_of(' '));
+                size_t firstNonSpace = delCmd.find_first_not_of(' ');
+                if (firstNonSpace != string::npos)
+                    delCmd.erase(0, firstNonSpace);
+                else
+                    delCmd.clear();
 
                 auto removeSpaces = [](string value)
                 {
@@ -364,11 +419,8 @@ int main()
                     for (int idx : linesToDelete)
                         lines.erase(lines.begin() + idx);
 
-                    clearScreen();
-                    cout << path << "\n";
-                    cout << "-------------------\n";
-                    for (int i = 0; i < lines.size(); i++)
-                        cout << setw(3) << i + 1 << "> " << lines[i] << "\n";
+                    // Still in COMMAND mode here; reflect that accurately
+                    renderScreen(path, lines, COMMAND, readOnly);
                 }
             }
             else
@@ -381,11 +433,7 @@ int main()
             lines[editIndex] = editLine(lines[editIndex]);
             mode = INSERT;
             // Redraw all lines after editing
-            clearScreen();
-            cout << path << "\n";
-            cout << "-------------------\n";
-            for (int i = 0; i < lines.size(); i++)
-                cout << setw(3) << i + 1 << "> " << lines[i] << "\n";
+            renderScreen(path, lines, mode, readOnly);
         }
     }
 
