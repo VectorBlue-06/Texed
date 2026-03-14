@@ -1,4 +1,4 @@
-# TextEd
+# TextEd (Discontinued)
 A minimal terminal-based text editor written in C++ for Windows.
 
 ##  Features
@@ -21,6 +21,11 @@ https://github.com/VectorBlue-06/Texed/releases
 
 
 ## TEXTED - Minimal Text Editor — v0.2
+
+<p align="center">
+  <img src="main.png" alt="the main ui" width="full"/>
+</p>
+
 
 A lightweight, keyboard-driven console text editor for Windows.
 
